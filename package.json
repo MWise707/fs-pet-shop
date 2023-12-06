@@ -1,8 +1,8 @@
 {
   "name": "fs-pet-store",
   "version": "0.1.0",
-  "type": "module",
   "description": "A small server app to demonstrate CRUD over an HTTP API",
+  "type": "module",
   "scripts": {
     "start": "nodemon"
   },
