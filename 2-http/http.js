@@ -8,6 +8,9 @@ const fs = require("fs");
 const server = http.createServer(function (req, res) {
   console.log(req.url);
   const pets = req.url.split("/");
+  console.log("Checking index before changing to number: ", pets[2]);
+  console.log("Type of index before changing: ", typeof pets[2]);
+  // console.log("length of index: ", pets[2].length);
   const index = parseInt(pets[2]);
   console.log("Index line 13 is:", typeof index);
   console.log(isNaN(index));
@@ -19,10 +22,17 @@ const server = http.createServer(function (req, res) {
       res.statusCode = 500;
       res.end(error);
     } else if (isNaN(index) && req.method === "GET") {
-      res.statusCode = 200;
-      res.setHeader = ("Content-Type", "application/JSON");
-      console.log(JSON.parse(data));
-      res.end(data);
+      // check if pets[2] === undefined
+      if (pets[2] !== undefined) {
+        console.log("Did not have valid index");
+        res.setHeader = ("Content-Type", "text/plain");
+        res.end("Not Found");
+      } else {
+        res.statusCode = 200;
+        res.setHeader = ("Content-Type", "application/JSON");
+        console.log(JSON.parse(data));
+        res.end(data);
+      }
     } else if (index >= 0 && req.method === "GET") {
       if (JSON.parse(data)[index] === undefined) {
         // if index at petObj is undefined
