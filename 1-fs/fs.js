@@ -36,7 +36,7 @@ if (process.argv[2] === "create") {
     } else {
       let petShop = JSON.parse(data);
       let newPet = {
-        age: process.argv[3],
+        age: parseInt(process.argv[3]),
         kind: process.argv[4],
         name: process.argv[5],
       };
@@ -48,7 +48,7 @@ if (process.argv[2] === "create") {
           if (error) {
             console.log(error);
           } else {
-            console.log(`Successfully added ${newPet}`);
+            console.log(newPet);
           }
         }
       );
