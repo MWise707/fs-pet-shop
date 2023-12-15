@@ -66,14 +66,14 @@ app.delete("/pets/:id", (req, res) => {
   } else {
     let tempPet = petsData[id];
     delete petsData[id];
-    // TODO something like - DELETE FROM tablename WHERE columnname 
+    // TODO something like - DELETE FROM tablename WHERE columnname
     res.send(tempPet);
   }
 });
 
 app.use("/*", (req, res) => {
   res.status(404).set("Content-Type", "text/plain").send("Not Found");
-})
+});
 
 app.listen(8000, () => {
   console.log("Listening on port 8000...");
