@@ -55,8 +55,28 @@ app.patch("/pets/:id", (req, res) => {
   }
 });
 
-app.listen(8002, () => {
-  console.log("Listening on port 8002...");
+// TODO add delete
+// app.delete -- url = /pets/:id...
+app.delete("/pets/:id", (req, res) => {
+  const { id } = req.params;
+  // TODO this id must match unique id from db
+
+  if (petsData[id] === undefined) {
+    res.status(404).set("Content-Type", "text/plain").send("Not Found");
+  } else {
+    let tempPet = petsData[id];
+    delete petsData[id];
+    // TODO something like - DELETE FROM tablename WHERE columnname 
+    res.send(tempPet);
+  }
+});
+
+app.use("/*", (req, res) => {
+  res.status(404).set("Content-Type", "text/plain").send("Not Found");
+})
+
+app.listen(8000, () => {
+  console.log("Listening on port 8000...");
 });
 
 function logger(req, res, next) {
@@ -64,5 +84,3 @@ function logger(req, res, next) {
   console.log("Request Path: ", req.url);
   next();
 }
-
-//{"age":5,"kind":"snake","name":"Buttons"}
