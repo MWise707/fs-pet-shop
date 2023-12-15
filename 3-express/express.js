@@ -32,7 +32,6 @@ app.get("/pets/:id", function (req, res) {
   console.log("type of", typeof id);
 
   fs.readFile("../pets.json", "utf8", (err, data) => {
-    // throw new Error("this is the user requested index: ", indexString);
     if (err) {
       console.error("Error reading file:", err);
       res.status(500).send("Internal Server Error");
