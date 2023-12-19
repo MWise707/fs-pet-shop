@@ -1,5 +1,11 @@
 import express from "express";
 import petsData from "../pets.json" assert { type: "json" };
+import pg from "pg";
+
+const port = 8000;
+const db = new pg.Pool({
+  connectionString: "postgres://localhost/petshop",
+});
 
 const app = express();
 
@@ -9,21 +15,33 @@ app.use(logger);
 
 //get all pets
 app.get("/pets", (req, res) => {
-  //TODO request from db
-  res.send(petsData);
+  db.query("SELECT * FROM petshop;")
+    .then((inventory) => {
+      res.send(inventory.rows);
+    })
+    .catch((error) => {
+      console.error(error);
+      res.status(500).send("Internal Server Error");
+    });
 });
 
 //get specific pet
 app.get("/pets/:id", (req, res) => {
-  //TODO request from db
   const { id } = req.params;
-
-  if (petsData[id] === undefined) {
-    console.error("Not Found");
-    res.status(404).set("Content-Type", "text/plain").send("Not Found");
-  } else {
-    res.send(petsData[id]);
-  }
+  db.query("SELECT * FROM petshop WHERE pet_id = ($1)", [id])
+    .then((pet) => {
+      if (pet === undefined) {
+        console.log("Pet is undefined");
+        res.status(404).send("Not found");
+      } else {
+        console.log("Successfully read pet: ", pet.rows);
+        res.send(pet.rows);
+      }
+    })
+    .catch((error) => {
+      console.error("Error reading specific pet", error);
+      res.status(500).send("Internal Server Error");
+    });
 });
 
 app.post("/pets", (req, res) => {
@@ -32,51 +50,82 @@ app.post("/pets", (req, res) => {
   if (!name || !kind || !age || !Number.isInteger(Number(age))) {
     res.status(400).set("Content-Type", "text/plain").send("Bad Request");
   } else {
-    //TODO write to db
-    petsData.push(newPet);
-    res.send(newPet);
+    db.query(
+      "INSERT INTO petshop (pet_id, name, kind, age) VALUES (default, $1, $2, $3)",
+      [name, kind, age]
+    )
+      .then((newPet) => {
+        console.log("Added new pet: ", name, kind, age);
+        res.send([name, kind, age]);
+      })
+      .catch((error) => {
+        console.error("Error adding new Pet: ", error);
+        res.status(500).send("Internal Server Error");
+      });
   }
 });
 
 app.patch("/pets/:id", (req, res) => {
   const { id } = req.params;
   const { name, kind, age } = req.body;
-  let currentPet = petsData[id];
 
-  if (petsData[id] === undefined) {
-    console.error("Not Found");
-    res.status(404).set("Content-Type", "text/plain").send("Not Found");
-  } else if (!name || !kind || !age || !Number.isInteger(Number(age))) {
-    // TODO - add to Dereks's file
+  if (!name || !kind || !age || !Number.isInteger(Number(age))) {
+    console.log("Request body not properly formatted");
     res.status(400).set("Content-Type", "text/plain").send("Bad Request");
   } else {
-    res.send(currentPet);
-    //res.send(currentPet[id]);
+    db.query(
+      "UPDATE petshop SET name = $2, kind = $3, age = $4 WHERE pet_id = $1",
+      [id, name, kind, age]
+    )
+      .then((result) => {
+        if (result.rowCount === 0) {
+          console.log("Pet is undefined");
+          res.status(404).send("Not found");
+        } else {
+          res.send({ id, name, kind, age });
+        }
+      })
+      .catch((error) => {
+        console.error("Error updating pet: ", error.message);
+        res.status(500).send("Sorry - Error updating pet");
+      });
   }
 });
 
-// TODO add delete
-// app.delete -- url = /pets/:id...
 app.delete("/pets/:id", (req, res) => {
   const { id } = req.params;
-  // TODO this id must match unique id from db
-
-  if (petsData[id] === undefined) {
-    res.status(404).set("Content-Type", "text/plain").send("Not Found");
-  } else {
-    let tempPet = petsData[id];
-    delete petsData[id];
-    // TODO something like - DELETE FROM tablename WHERE columnname
-    res.send(tempPet);
-  }
-});
+  let oldPet = {};
+  db.query("SELECT * FROM petshop WHERE pet_id = $1", [id])
+  .then((pet) => {
+    if (pet === undefined) {
+      console.log("Pet is undefined");
+      res.status(404).send("Not found");
+    } else {
+      const { name, age, kind } = pet.rows[0];
+      oldPet = { id, name, age, kind };
+      db.query("DELETE FROM petshop WHERE pet_id = $1", [id])
+      .then((result) => {
+          console.log("Deleted Pet: ", oldPet);
+          res.send(oldPet);
+      })
+      .catch((error) => {
+        console.error("Error deleting pet: ", error.message);
+        res.status(500).send("Sorry - Error deleting pet");
+      })
+    }
+  })
+  .catch((error) => {
+    console.error("Error deleting pet: ", error.message);
+    res.status(500).send("Sorry - Error deleting pet");
+  })
+});4
 
 app.use("/*", (req, res) => {
   res.status(404).set("Content-Type", "text/plain").send("Not Found");
 });
 
-app.listen(8000, () => {
-  console.log("Listening on port 8000...");
+app.listen(port, () => {
+  console.log("Listening on port: ", port);
 });
 
 function logger(req, res, next) {
